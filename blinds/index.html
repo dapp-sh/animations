@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Blinds Carousel</title>
+    <style>
+      .container-main-for-blind {
+        background: #1a1a1a;
+        font-family: Arial, sans-serif;
+        overflow-x: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        width: 100%;
+        margin: 0 auto;
+        max-width: 800px;
+        height: 400px;
+        overflow: hidden;
+      }
+
+      .section {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        z-index: 0;
+      }
+
+      .section img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .section.active {
+        opacity: 1;
+        z-index: 1;
+      }
+
+      .section .section-1 {
+        background: linear-gradient(45deg, #2c3e50, #3498db);
+      }
+      .section .section-2 {
+        background: linear-gradient(45deg, #e74c3c, #c0392b);
+      }
+      .section .section-3 {
+        background: linear-gradient(45deg, #27ae60, #2ecc71);
+      }
+
+      .blind-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 2;
+        pointer-events: none;
+      }
+
+      .blind {
+        position: absolute;
+        height: 100%;
+        overflow: hidden;
+        transform: scaleX(0);
+        transform-origin: right;
+      }
+
+      .blind.open {
+        transform: scaleX(1);
+        transition: transform 0.8s ease-in-out;
+      }
+
+      .blind-content {
+        position: absolute;
+        height: 100%;
+        width: 800px;
+        background-position: center;
+        background-size: cover;
+      }
+
+      .controls {
+        margin-top: 20px;
+        display: flex;
+        gap: 20px;
+        justify-content: center;
+      }
+
+      .controls > button {
+        padding: 10px 20px;
+        font-size: 1rem;
+        cursor: pointer;
+        background: #202020;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        transition: background 0.3s;
+      }
+
+      @media (max-width: 850px) {
+        .container {
+          height: 300px;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .container {
+          height: 250px;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .container {
+          height: 200px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- INIT CAROUSEL -->
+    <div class="container-main-for-blind">
+      <div class="section section-1 active">
+        <img src="public/slide_1.jpeg" />
+      </div>
+      <div class="section section-2">
+        <img src="public/slide_2.jpeg" />
+      </div>
+      <div class="section section-3">
+        <img src="public/slide_3.jpeg" />
+      </div>
+      <div class="blind-container"></div>
+    </div>
+    <div class="controls">
+      <button id="prev">Previous</button>
+      <button id="next">Next</button>
+    </div>
+    <!-- END CAROUSEL -->
+
+    <script>
+      const numBlinds = 20
+      const blindWidth = 100 / numBlinds
+
+      const container = document.querySelector('.container-main-for-blind')
+      const blindContainer = document.querySelector('.blind-container')
+      const sections = [
+        document.querySelector('.section-1'),
+        document.querySelector('.section-2'),
+        document.querySelector('.section-3'),
+      ]
+      const prevBtn = document.querySelector('#prev')
+      const nextBtn = document.querySelector('#next')
+
+      const images = ['public/slide_1.jpeg', 'public/slide_2.jpeg', 'public/slide_3.jpeg']
+      let currentSlide = 0
+      let isAnimating = false
+
+      function createBlinds() {
+        blindContainer.innerHTML = ''
+        for (let i = 0; i < numBlinds; i++) {
+          const blind = document.createElement('div')
+          blind.className = 'blind'
+          blind.style.width = blindWidth + '%'
+          blind.style.left = i * blindWidth + '%'
+
+          const blindContent = document.createElement('div')
+          blindContent.className = 'blind-content'
+          blindContent.style.left = -(i * blindWidth * 8) + 'px'
+
+          blind.appendChild(blindContent)
+          blindContainer.appendChild(blind)
+        }
+      }
+
+      createBlinds()
+      const blinds = document.querySelectorAll('.blind')
+      const blindContents = document.querySelectorAll('.blind-content')
+
+      function updateBlinds(targetSlide) {
+        blindContents.forEach((content) => {
+          content.style.backgroundImage = `url(${images[targetSlide]})`
+        })
+      }
+
+      function animateBlinds(direction, nextSlide) {
+        if (isAnimating) return
+        isAnimating = true
+
+        const staggerTime = 50
+        const lastBlindIndex = direction === 'next' ? numBlinds - 1 : 0
+        const lastBlind = blinds[lastBlindIndex]
+
+        blinds.forEach((blind, index) => {
+          const delay = direction === 'next' ? index * staggerTime : (numBlinds - 1 - index) * staggerTime
+          blind.style.transformOrigin = direction === 'next' ? 'left' : 'right'
+          setTimeout(() => {
+            blind.classList.add('open')
+          }, delay)
+        })
+
+        lastBlind.addEventListener(
+          'transitionend',
+          function handler() {
+            lastBlind.removeEventListener('transitionend', handler)
+            blinds.forEach((blind) => {
+              blind.classList.remove('open')
+            })
+            sections[currentSlide].classList.remove('active')
+            sections[nextSlide].classList.add('active')
+            currentSlide = nextSlide
+            isAnimating = false
+          },
+          { once: true },
+        )
+      }
+
+      nextBtn.addEventListener('click', () => {
+        if (isAnimating) return
+        const nextSlide = (currentSlide + 1) % 3
+        updateBlinds(nextSlide)
+        animateBlinds('next', nextSlide)
+      })
+
+      prevBtn.addEventListener('click', () => {
+        if (isAnimating) return
+        const nextSlide = (currentSlide - 1 + 3) % 3
+        updateBlinds(nextSlide)
+        animateBlinds('prev', nextSlide)
+      })
+
+      updateBlinds(0)
+      sections[0].classList.add('active')
+    </script>
+  </body>
+</html>

@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Carrusel 3D estilo Primo Fashion Recto Mejorado</title>
+  </head>
+  <body>
+    <div class="carousel-container">
+      <button id="prevBtn">Anterior</button>
+      <div class="carousel">
+        <div class="card"><img src="public/slide_1.jpeg" alt="Imagen 1" /></div>
+        <div class="card"><img src="public/slide_2.jpeg" alt="Imagen 2" /></div>
+        <div class="card"><img src="public/slide_3.jpeg" alt="Imagen 3" /></div>
+      </div>
+      <button id="nextBtn">Siguiente</button>
+    </div>
+
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #f0f0f0;
+        font-family: Arial, sans-serif;
+      }
+
+      .carousel-container {
+        position: relative;
+        text-align: center;
+      }
+
+      button {
+        padding: 10px 20px;
+        font-size: 16px;
+        margin: 0 10px;
+        cursor: pointer;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+      }
+
+      button:hover {
+        background-color: #0056b3;
+      }
+
+      .carousel {
+        position: relative;
+        width: 400px;
+        height: 600px;
+        perspective: 2000px; /* Mayor perspectiva para un efecto 3D más marcado */
+        transform-style: preserve-3d;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .card {
+        width: 300px;
+        height: 500px;
+        position: absolute;
+        transition:
+          transform 0.8s ease,
+          opacity 0.5s ease,
+          box-shadow 0.3s ease;
+        transform-style: preserve-3d;
+        z-index: 1;
+      }
+
+      .card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 10px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      }
+
+      /* Posiciones iniciales para las cartas rectas mirando hacia la izquierda */
+      .card:nth-child(1) {
+        transform: translateZ(0) translateX(0) translateY(0) rotateY(-15deg); /* Recto, solo mirando hacia la izquierda */
+        z-index: 3;
+        opacity: 1;
+      }
+
+      .card:nth-child(2) {
+        transform: translateZ(-200px) translateX(100px) translateY(0) rotateY(-10deg);
+        z-index: 2;
+        opacity: 0.7;
+      }
+
+      .card:nth-child(3) {
+        transform: translateZ(-400px) translateX(200px) translateY(0) rotateY(-5deg);
+        z-index: 1;
+        opacity: 0.5;
+      }
+
+      /* Estado cuando una carta se mueve hacia abajo y desaparece */
+      .card.moving-down {
+        transform: translateZ(-600px) translateY(600px) translateX(300px) rotateY(-15deg); /* Desaparece hacia abajo y hacia la derecha */
+        opacity: 0;
+        z-index: 0;
+        box-shadow: none;
+      }
+
+      /* Estado cuando una carta está activa (en frente) */
+      .card.active {
+        transform: translateZ(0) translateX(0) translateY(0) rotateY(-15deg); /* Recto, solo mirando hacia la izquierda */
+        z-index: 3;
+        opacity: 1;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+      }
+
+      /* Ocultar completamente las cartas que no están en uso para evitar reflejos o superposiciones */
+      .card:not(.active):not(.moving-down) {
+        visibility: hidden; /* Oculta las cartas inactivas para evitar reflejos */
+      }
+    </style>
+
+    <script>
+      // Controlar el carrusel con botones
+      const cards = document.querySelectorAll('.card')
+      const prevBtn = document.getElementById('prevBtn')
+      const nextBtn = document.getElementById('nextBtn')
+      let currentIndex = 0
+
+      function updateCarousel(direction = 1) {
+        cards.forEach((card, index) => {
+          card.classList.remove('active', 'moving-down')
+          let zIndex = cards.length - Math.abs(currentIndex - index)
+          let depth = (index - currentIndex) * -200 // Mayor profundidad para simular la perspectiva
+          let xOffset = (index - currentIndex) * 100 // Desplazamiento lateral para simular la inclinación
+          let yOffset = 0 // Sin desplazamiento vertical inicial, solo hacia abajo al moverse
+          let rotateY = -15 + (index - currentIndex) * 5 // Mantiene la diagonal hacia la izquierda
+          let opacity = 1 - Math.abs(index - currentIndex) * 0.3
+
+          if (index === currentIndex) {
+            card.classList.add('active')
+            card.style.visibility = 'visible' // Asegura que la carta activa sea visible
+          } else if (index === (currentIndex - direction + cards.length) % cards.length) {
+            // La carta anterior (o siguiente, dependiendo de la dirección) se mueve hacia abajo y desaparece
+            card.classList.add('moving-down')
+            depth = -600
+            yOffset = 600
+            xOffset = 300 // Desplaza hacia la derecha al desaparecer
+            opacity = 0
+            zIndex = 0
+            card.style.visibility = 'visible' // Mantiene visible solo durante la transición
+          } else {
+            card.style.visibility = 'hidden' // Oculta las cartas inactivas para evitar reflejos
+            return // Salta el resto de las actualizaciones para estas cartas
+          }
+
+          card.style.transform = `translateZ(${depth}px) translateX(${xOffset}px) translateY(${yOffset}px) rotateY(${rotateY}deg)`
+          card.style.zIndex = zIndex
+          card.style.opacity = opacity
+          card.style.boxShadow = zIndex > 1 ? '0 10px 30px rgba(0, 0, 0, 0.2)' : 'none'
+        })
+      }
+
+      // Botones para navegar
+      nextBtn.addEventListener('click', () => {
+        currentIndex = (currentIndex + 1) % cards.length
+        updateCarousel(1) // Dirección positiva para "Siguiente"
+      })
+
+      prevBtn.addEventListener('click', () => {
+        currentIndex = (currentIndex - 1 + cards.length) % cards.length
+        updateCarousel(-1) // Dirección negativa para "Anterior"
+      })
+
+      // Iniciar con la primera carta activa
+      updateCarousel()
+    </script>
+  </body>
+</html>
