@@ -8,11 +8,13 @@
   "keywords": [],
   "main": "index.js",
   "scripts": {
+    "start": "serve",
     "lint": "eslint . --fix"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.3.0",
     "eslint": "^9.21.0",
-    "eslint-plugin-format": "^1.0.1"
+    "eslint-plugin-format": "^1.0.1",
+    "serve": "^14.2.4"
   }
 }

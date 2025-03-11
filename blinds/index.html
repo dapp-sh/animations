@@ -21,6 +21,13 @@
         overflow: hidden;
       }
 
+      .carousel-title {
+        font-family: Arial, sans-serif;
+        font-size: 1.5rem;
+        text-align: center;
+        margin-bottom: 10px;
+      }
+
       .section {
         position: absolute;
         width: 100%;
@@ -38,16 +45,6 @@
       .section.active {
         opacity: 1;
         z-index: 1;
-      }
-
-      .section .section-1 {
-        background: linear-gradient(45deg, #2c3e50, #3498db);
-      }
-      .section .section-2 {
-        background: linear-gradient(45deg, #e74c3c, #c0392b);
-      }
-      .section .section-3 {
-        background: linear-gradient(45deg, #27ae60, #2ecc71);
       }
 
       .blind-container {
@@ -76,9 +73,10 @@
       .blind-content {
         position: absolute;
         height: 100%;
-        width: 800px;
+        width: 100%;
         background-position: center;
         background-size: cover;
+        left: 0;
       }
 
       .controls {
@@ -99,27 +97,48 @@
         transition: background 0.3s;
       }
 
+      .blind-vertical {
+        position: absolute;
+        width: 100%;
+        overflow: hidden;
+        transform: scaleY(0);
+        transform-origin: bottom;
+      }
+
+      .blind-vertical.open-vertical {
+        transform: scaleY(1);
+        transition: transform 0.8s ease-in-out;
+      }
+
+      .blind-content-vertical {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        background-repeat: no-repeat;
+      }
+
       @media (max-width: 850px) {
-        .container {
+        .container-main-for-blind {
           height: 300px;
         }
       }
 
       @media (max-width: 600px) {
-        .container {
+        .container-main-for-blind {
           height: 250px;
         }
       }
 
       @media (max-width: 480px) {
-        .container {
+        .container-main-for-blind {
           height: 200px;
         }
       }
     </style>
   </head>
   <body>
-    <!-- INIT CAROUSEL -->
+    <h1 class="carousel-title">El carrusel está horizontal</h1>
     <div class="container-main-for-blind">
       <div class="section section-1 active">
         <img src="public/slide_1.jpeg" />
@@ -133,15 +152,13 @@
       <div class="blind-container"></div>
     </div>
     <div class="controls">
-      <button id="prev">Previous</button>
-      <button id="next">Next</button>
+      <button id="prev">Anterior</button>
+      <button id="next">Siguiente</button>
+      <button id="toggle-orientation">Cambiar Orientación</button>
     </div>
-    <!-- END CAROUSEL -->
 
     <script>
       const numBlinds = 20
-      const blindWidth = 100 / numBlinds
-
       const container = document.querySelector('.container-main-for-blind')
       const blindContainer = document.querySelector('.blind-container')
       const sections = [
@@ -151,69 +168,206 @@
       ]
       const prevBtn = document.querySelector('#prev')
       const nextBtn = document.querySelector('#next')
+      const toggleOrientationBtn = document.querySelector('#toggle-orientation')
+      const carouselTitle = document.querySelector('.carousel-title')
 
       const images = ['public/slide_1.jpeg', 'public/slide_2.jpeg', 'public/slide_3.jpeg']
       let currentSlide = 0
       let isAnimating = false
+      let orientation = 'horizontal'
+
+      function updateTitle() {
+        carouselTitle.textContent = `El carrusel está ${orientation === 'horizontal' ? 'horizontal' : 'vertical'}`
+      }
 
       function createBlinds() {
         blindContainer.innerHTML = ''
-        for (let i = 0; i < numBlinds; i++) {
-          const blind = document.createElement('div')
-          blind.className = 'blind'
-          blind.style.width = blindWidth + '%'
-          blind.style.left = i * blindWidth + '%'
+        const containerWidth = container.offsetWidth
+        const containerHeight = container.offsetHeight
 
-          const blindContent = document.createElement('div')
-          blindContent.className = 'blind-content'
-          blindContent.style.left = -(i * blindWidth * 8) + 'px'
+        if (orientation === 'horizontal') {
+          const blindWidth = containerWidth / numBlinds
+          for (let i = 0; i < numBlinds; i++) {
+            const blind = document.createElement('div')
+            blind.className = 'blind'
+            blind.style.width = `${blindWidth}px`
+            blind.style.left = `${i * blindWidth}px`
 
-          blind.appendChild(blindContent)
-          blindContainer.appendChild(blind)
+            const blindContent = document.createElement('div')
+            blindContent.className = 'blind-content'
+            blindContent.style.backgroundPosition = `${-i * blindWidth}px center`
+            blindContent.style.width = `${containerWidth}px`
+
+            blind.appendChild(blindContent)
+            blindContainer.appendChild(blind)
+          }
+        } else {
+          const blindHeight = containerHeight / numBlinds
+          const activeImg = sections[currentSlide].querySelector('img')
+
+          const naturalWidth = activeImg.naturalWidth
+          const naturalHeight = activeImg.naturalHeight
+          const renderedWidth = containerWidth
+          const renderedHeight = containerHeight
+
+          const imgRatio = naturalWidth / naturalHeight
+          const containerRatio = renderedWidth / renderedHeight
+          let bgWidth, bgHeight, offsetX, offsetY
+
+          if (imgRatio > containerRatio) {
+            bgWidth = naturalHeight * containerRatio
+            bgHeight = naturalHeight
+            offsetX = (naturalWidth - bgWidth) / 2
+            offsetY = 0
+          } else {
+            bgHeight = naturalWidth / containerRatio
+            bgWidth = naturalWidth
+            offsetX = 0
+            offsetY = (naturalHeight - bgHeight) / 2
+          }
+
+          const scaleX = renderedWidth / bgWidth
+          const scaleY = renderedHeight / bgHeight
+          const scaledWidth = naturalWidth * scaleX
+          const scaledHeight = naturalHeight * scaleY
+
+          for (let i = 0; i < numBlinds; i++) {
+            const blind = document.createElement('div')
+            blind.className = 'blind-vertical'
+            blind.style.height = `${blindHeight}px`
+            blind.style.top = `${i * blindHeight}px`
+            blind.style.width = '100%'
+
+            const blindContent = document.createElement('div')
+            blindContent.className = 'blind-content-vertical'
+            blindContent.style.backgroundImage = `url(${images[currentSlide]})`
+            blindContent.style.backgroundSize = `${scaledWidth}px ${scaledHeight}px`
+            const yPos = offsetY * scaleY + i * blindHeight
+            blindContent.style.backgroundPosition = `${-offsetX * scaleX}px ${-yPos}px`
+
+            blind.appendChild(blindContent)
+            blindContainer.appendChild(blind)
+          }
         }
       }
 
-      createBlinds()
-      const blinds = document.querySelectorAll('.blind')
-      const blindContents = document.querySelectorAll('.blind-content')
-
       function updateBlinds(targetSlide) {
-        blindContents.forEach((content) => {
-          content.style.backgroundImage = `url(${images[targetSlide]})`
-        })
+        if (orientation === 'horizontal') {
+          const blindContents = document.querySelectorAll('.blind-content')
+          blindContents.forEach((content) => {
+            content.style.backgroundImage = `url(${images[targetSlide]})`
+          })
+        } else {
+          const blindContents = document.querySelectorAll('.blind-content-vertical')
+          const activeImg = sections[targetSlide].querySelector('img')
+
+          const naturalWidth = activeImg.naturalWidth
+          const naturalHeight = activeImg.naturalHeight
+          const renderedWidth = container.offsetWidth
+          const renderedHeight = container.offsetHeight
+
+          const imgRatio = naturalWidth / naturalHeight
+          const containerRatio = renderedWidth / renderedHeight
+          let bgWidth, bgHeight, offsetX, offsetY
+
+          if (imgRatio > containerRatio) {
+            bgWidth = naturalHeight * containerRatio
+            bgHeight = naturalHeight
+            offsetX = (naturalWidth - bgWidth) / 2
+            offsetY = 0
+          } else {
+            bgHeight = naturalWidth / containerRatio
+            bgWidth = naturalWidth
+            offsetX = 0
+            offsetY = (naturalHeight - bgHeight) / 2
+          }
+
+          const scaleX = renderedWidth / bgWidth
+          const scaleY = renderedHeight / bgHeight
+          const scaledWidth = naturalWidth * scaleX
+          const scaledHeight = naturalHeight * scaleY
+
+          blindContents.forEach((content, index) => {
+            content.style.backgroundImage = `url(${images[targetSlide]})`
+            content.style.backgroundSize = `${scaledWidth}px ${scaledHeight}px`
+            const blindHeight = renderedHeight / numBlinds
+            const yPos = offsetY * scaleY + index * blindHeight
+            content.style.backgroundPosition = `${-offsetX * scaleX}px ${-yPos}px`
+          })
+        }
       }
 
       function animateBlinds(direction, nextSlide) {
         if (isAnimating) return
         isAnimating = true
 
-        const staggerTime = 50
-        const lastBlindIndex = direction === 'next' ? numBlinds - 1 : 0
-        const lastBlind = blinds[lastBlindIndex]
+        if (orientation === 'horizontal') {
+          const blinds = document.querySelectorAll('.blind')
+          const staggerTime = 50
+          const lastBlindIndex = direction === 'next' ? numBlinds - 1 : 0
+          const lastBlind = blinds[lastBlindIndex]
 
-        blinds.forEach((blind, index) => {
-          const delay = direction === 'next' ? index * staggerTime : (numBlinds - 1 - index) * staggerTime
-          blind.style.transformOrigin = direction === 'next' ? 'left' : 'right'
-          setTimeout(() => {
-            blind.classList.add('open')
-          }, delay)
-        })
+          blinds.forEach((blind, index) => {
+            const delay = direction === 'next' ? index * staggerTime : (numBlinds - 1 - index) * staggerTime
+            blind.style.transformOrigin = direction === 'next' ? 'left' : 'right'
+            setTimeout(() => {
+              blind.classList.add('open')
+            }, delay)
+          })
 
-        lastBlind.addEventListener(
-          'transitionend',
-          function handler() {
-            lastBlind.removeEventListener('transitionend', handler)
-            blinds.forEach((blind) => {
-              blind.classList.remove('open')
-            })
-            sections[currentSlide].classList.remove('active')
-            sections[nextSlide].classList.add('active')
-            currentSlide = nextSlide
-            isAnimating = false
-          },
-          { once: true },
-        )
+          lastBlind.addEventListener(
+            'transitionend',
+            function handler() {
+              lastBlind.removeEventListener('transitionend', handler)
+              blinds.forEach((blind) => {
+                blind.classList.remove('open')
+              })
+              sections[currentSlide].classList.remove('active')
+              sections[nextSlide].classList.add('active')
+              currentSlide = nextSlide
+              isAnimating = false
+            },
+            { once: true },
+          )
+        } else {
+          const blinds = document.querySelectorAll('.blind-vertical')
+          const staggerTime = 50
+          const lastBlindIndex = direction === 'next' ? numBlinds - 1 : 0
+          const lastBlind = blinds[lastBlindIndex]
+
+          blinds.forEach((blind, index) => {
+            const delay = direction === 'next' ? index * staggerTime : (numBlinds - 1 - index) * staggerTime
+            blind.style.transformOrigin = direction === 'next' ? 'top' : 'bottom'
+            setTimeout(() => {
+              blind.classList.add('open-vertical')
+            }, delay)
+          })
+
+          lastBlind.addEventListener(
+            'transitionend',
+            function handler() {
+              lastBlind.removeEventListener('transitionend', handler)
+              blinds.forEach((blind) => {
+                blind.classList.remove('open-vertical')
+              })
+              sections[currentSlide].classList.remove('active')
+              sections[nextSlide].classList.add('active')
+              currentSlide = nextSlide
+              isAnimating = false
+            },
+            { once: true },
+          )
+        }
       }
+
+      createBlinds()
+      updateBlinds(0)
+      updateTitle()
+
+      window.addEventListener('resize', () => {
+        createBlinds()
+        updateBlinds(currentSlide)
+      })
 
       nextBtn.addEventListener('click', () => {
         if (isAnimating) return
@@ -229,8 +383,12 @@
         animateBlinds('prev', nextSlide)
       })
 
-      updateBlinds(0)
-      sections[0].classList.add('active')
+      toggleOrientationBtn.addEventListener('click', () => {
+        orientation = orientation === 'horizontal' ? 'vertical' : 'horizontal'
+        createBlinds()
+        updateBlinds(currentSlide)
+        updateTitle()
+      })
     </script>
   </body>
 </html>
