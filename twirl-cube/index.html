@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Carrusel de Cubo Rubik</title>
+    <title>Twirl Cube</title>
     <style>
       :root {
-        --cube-size: 40vmin;
+        --cube-size: 50vmin;
         --perspective: calc(var(--cube-size) * 2);
         --duration: 1000ms;
         --ease: cubic-bezier(0.55, 0.055, 0.675, 0.19);
@@ -59,24 +59,33 @@
       }
 
       .controls {
-        position: fixed;
-        bottom: 20px;
+        position: absolute;
+        top: 50%;
         display: flex;
+        width: 100vw;
+        justify-content: space-around;
         gap: 20px;
       }
 
-      button {
-        padding: 10px 20px;
+      .controls > button {
+        padding: 5px;
+        display: flex;
+        justify-content: center;
         font-size: 16px;
         cursor: pointer;
-        background-color: #fff;
+        background-color: #ddd;
         border: none;
-        border-radius: 5px;
-        transition: background-color 0.3s;
+        border-radius: 50%;
       }
 
-      button:hover {
-        background-color: #ddd;
+      @media (max-width: 763px) {
+        .controls {
+          justify-content: space-between;
+        }
+
+        .controls > button {
+          margin: 0 1rem;
+        }
       }
     </style>
   </head>
@@ -110,8 +119,18 @@
       </div>
 
       <div class="controls">
-        <button id="prevBtn">Anterior</button>
-        <button id="nextBtn">Siguiente</button>
+        <button id="prevBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32">
+            <!-- Icon from Carbon by IBM - undefined -->
+            <path fill="currentColor" d="m14 26l1.41-1.41L7.83 17H28v-2H7.83l7.58-7.59L14 6L4 16z" />
+          </svg>
+        </button>
+        <button id="nextBtn">
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 32 32">
+            <!-- Icon from Carbon by IBM - undefined -->
+            <path fill="currentColor" d="m18 6l-1.43 1.393L24.15 15H4v2h20.15l-7.58 7.573L18 26l10-10z" />
+          </svg>
+        </button>
       </div>
     </div>
 
@@ -194,6 +213,9 @@
 
       nextBtn.addEventListener('click', () => rotateCube('next'))
       prevBtn.addEventListener('click', () => rotateCube('prev'))
+
+      cube.addEventListener('touchstart', () => rotateCube('next'))
+      cube.addEventListener('mousedown', () => rotateCube('next'))
     </script>
   </body>
 </html>
